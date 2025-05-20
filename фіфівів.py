@@ -34,7 +34,7 @@ def convert_utc_to_gmt3(text):
 async def format(text, src):
     if src == "bybit_tokensplash":
         text = convert_utc_to_gmt3(text)
-        text = text.replace("Start", "Старт")
+        text = text.replace("Start", "*Старт")
         text = text.replace("End", "Конец")
         text = text.replace("New user deadline", "Дедлайн")
         text = text.replace("New user prize", "Награда*")
@@ -42,13 +42,12 @@ async def format(text, src):
         text = text.replace("Details", "Детали")
     if src == "kormushka_mexc":
         if "+" in text:
-            text = "*Pump \n\n$" + text
+            text = "*Pump \n\n" + text
         elif "i" in text:
-            text = "*Dump \n\n$" + text
+            text = "Dump \n\n" + text
         text = text.replace("in", "за")
         text = text.replace("secs", "секунд*")
-        text = text.replace("| Limit ~", "\n\n MEXC Limit - *")
-        text = text.replace('`', "")
+        text = text.replace("| Limit ~", "\n\n *MEXC Limit - ")
         text = text + "*"
     if src == "mexcTracker":
         # if "support me" in text:
@@ -71,7 +70,7 @@ async def format(text, src):
             text = text.replace("source // chat // trackers // support me", "")
             if("Long" in text):
                 text = text.replace("| Long", "")
-                text = "🟢Long" + text
+                text = "🟢Long " + text
             if("Short" in text):
                 text = text.replace("| Short", "")
                 text = "🔴Short " + text
@@ -156,7 +155,7 @@ async def format(text, src):
             #     del lines[userline-2]
             
             text = '\n'.join(lines[:-1])
-            user = user.replace("`", "")
+
 
             if buy:
                 text = f"🟢 {name} {val}\n"  + text
@@ -271,16 +270,6 @@ async def format(text, src):
 
             monthes_en = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
             monthes_ru = ['Янв', 'Фев', 'Марта', 'Апр','Мая', 'Июня', 'Июля', 'Авг', 'Сен', 'Окт', 'Ноя','Дек']
-            text = re.sub(r'(\bЦена\s+)(\w+)', r'\1**\2**', text)
-
-            text = text.replace("MCap","*MCap*")
-            text = text.replace("Ликвидности","*Ликвидности*")
-            text = text.replace("Объём за час","*Объём за час*")
-            text = text.replace("Цена","*Цена*")
-            text = text.replace("Futures","*Futures*")
-            text = text.replace("CA:","*CA*:")
-            text = text.replace("User","*User*")
-            text = text.replace("Период","*Период*")
 
             for i in range(len(monthes_en)):
                 text = text.replace(monthes_en[i], monthes_ru[i])
@@ -300,9 +289,7 @@ def send_via_bot(text, to):
         "chat_id": channel_tosend_username[0],
         "text": text,
         "message_thread_id": to,
-        "parse_mode": "Markdown",
-        "disable_web_page_preview": True
-
+        "parse_mode": "Markdown"
     }
     try:
         response = requests.post(url, json=data)
@@ -310,14 +297,14 @@ def send_via_bot(text, to):
     except Exception as e:
         print(f"❌ Ошибка при отправке через бот: {e}")
 
-# async def get_latest_message():
-#     await client.start()
-#     # Получаем объект канала
-#     channel = await client.get_entity("DCATrack")
-#     # Получаем последнее сообщение
-#     messages = await client.get_messages(channel, limit=20)
-#     text = await format(messages[1].text, "DCATrack")
-#     send_via_bot(text, "DCATrack")
+async def get_latest_message():
+    await client.start()
+    # Получаем объект канала
+    channel = await client.get_entity("DCATrack")
+    # Получаем последнее сообщение
+    messages = await client.get_messages(channel, limit=10)
+    text = await format(messages[4].text, "DCATrack")
+    send_via_bot(text, "DCATrack")
     
-# with client:
-#     client.loop.run_until_complete(get_latest_message())
+with client:
+    client.loop.run_until_complete(get_latest_message())
