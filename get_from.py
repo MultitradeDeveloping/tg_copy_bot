@@ -12,8 +12,11 @@ async def handler(event):
     src = event.chat.username  
     print(f"📩 Новое сообщение в канале {src}: {text}")
 
-    # Форматируем текст
-    text_ = await format(text, src)
+    messages = await client.get_messages(src, limit=1)
+    text_ = messages[0].text
+
+    text_ = await format(text_, src)
+    
     print(text_)
 
     # Ищем индекс источника, чтобы отправить в соответствующий канал

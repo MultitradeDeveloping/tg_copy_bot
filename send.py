@@ -32,10 +32,9 @@ def convert_utc_to_gmt3(text):
 
 
 async def format(text, src):
-    print(f"point 1, {src}")
     if src == "bybit_tokensplash":
         text = convert_utc_to_gmt3(text)
-        text = text.replace("Start", "*Старт")
+        text = text.replace("Start", "Старт")
         text = text.replace("End", "Конец")
         text = text.replace("New user deadline", "Дедлайн")
         text = text.replace("New user prize", "Награда*")
@@ -43,15 +42,15 @@ async def format(text, src):
         text = text.replace("Details", "Детали")
     if src == "kormushka_mexc":
         if "+" in text:
-            text = "*Pump \n\n" + text
+            text = "*Pump \n\n$" + text
         elif "i" in text:
-            text = "Dump \n\n" + text
+            text = "*Dump \n\n$" + text
         text = text.replace("in", "за")
         text = text.replace("secs", "секунд*")
-        text = text.replace("| Limit ~", "\n\n *MEXC Limit - ")
+        text = text.replace("| Limit ~", "\n\n MEXC Limit - *")
+        text = text.replace('`', "")
         text = text + "*"
     if src == "mexcTracker":
-        print("point 2")
         # if "support me" in text:
             
         #     text = text.replace("```", "")
@@ -69,7 +68,6 @@ async def format(text, src):
         
         if "support me" in text:
             
-            print("point 1488")
             text = text.replace("source // chat // trackers // support me", "")
             if("Long" in text):
                 text = text.replace("| Long", "")
@@ -149,14 +147,24 @@ async def format(text, src):
             text = re.sub(r'\(\d+\s+cycles\)', '', text)
             # text = re.sub(r'\(\d+\s+cycles\)', '', text)
             
+            lines = text.splitlines()
+            userline = next((i for i, line in enumerate(lines) if 'User:' in line), None)
+            user = lines[userline].strip().split(' ')
+            user = user[1]
+            
+            # for i in range(5):
+            #     del lines[userline-2]
+            
+            text = '\n'.join(lines[:-1])
+            user = user.replace("`", "")
 
             if buy:
                 text = f"🟢 {name} {val}\n"  + text
-                text = text.replace('Frequency:', "DCA *покупает*")
+                text = text.replace('Frequency:', f"[DCA](https://solscan.io/account/{user}) *покупает*")
 
             else:
                 text = f"🔴 {name} {val}\n" + text
-                text = text.replace('Frequency:', "DCA *продаёт*")
+                text = text.replace('Frequency:', f"[DCA](https://solscan.io/account/{user}) *продаёт*")
             
             text = text.replace('every', 'каждые')
             text = text.replace('seconds', 'сек')
@@ -198,20 +206,10 @@ async def format(text, src):
             text = text.replace('**', '')
 
 
-            lines = text.splitlines()
-            userline = next((i for i, line in enumerate(lines) if 'User:' in line), None)
-            user = lines[userline].strip().split(' ')
-            user = user[1]
-            
-            # for i in range(5):
-            #     del lines[userline-2]
-            
-            text = '\n'.join(lines[:-1])
-
+     
             # text = '\n'.join(lines)
             user = user.strip('`')
 
-            text = text.replace('DCA', f'[DCA](https://solscan.io/account/{user})', 1)
             
             lines = text.splitlines()
             Vline = next((i for i, line in enumerate(lines) if 'V1h' in line), None)
@@ -246,13 +244,42 @@ async def format(text, src):
 
             new_period = f"\nПериод: {start.strftime('%d %b %Y %H:%M:%S')} - {end.strftime('%d %b %Y %H:%M:%S')} GMT+3"
 
-            
             lines = text.splitlines()
             text = '\n'.join(lines[:-2])
             text = text + '\n' + new_period
             
+           
+
+            # Найдём строку, где первое слово — Период
+            lines = text.strip().splitlines()
+            pattern = re.compile(r'^\*?Период\b.*', re.IGNORECASE)
+
+            matching_line = None
+            remaining_lines = []
+
+            for line in lines:
+                if matching_line is None and pattern.match(line.strip()):
+                    matching_line = line
+                else:
+                    remaining_lines.append(line)
+
+            # Собираем текст обратно, перенося подходящую строку в конец
+            if matching_line:
+                text = '\n'.join(remaining_lines + [matching_line])
+            else:
+                text = text.strip()
+
             monthes_en = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
             monthes_ru = ['Янв', 'Фев', 'Марта', 'Апр','Мая', 'Июня', 'Июля', 'Авг', 'Сен', 'Окт', 'Ноя','Дек']
+
+            text = text.replace("MCap","*MCap*")
+            text = text.replace("Ликвидности","*Ликвидности*")
+            text = text.replace("Объём за час","*Объём за час*")
+            text = text.replace("Цена","*Цена*")
+            text = text.replace("Futures","*Futures*")
+            text = text.replace("CA","*CA*")
+            text = text.replace("User","*User*")
+            text = text.replace("Период","*Период*")
 
             for i in range(len(monthes_en)):
                 text = text.replace(monthes_en[i], monthes_ru[i])
@@ -272,7 +299,9 @@ def send_via_bot(text, to):
         "chat_id": channel_tosend_username[0],
         "text": text,
         "message_thread_id": to,
-        "parse_mode": "Markdown"
+        "parse_mode": "Markdown",
+        "disable_web_page_preview": True
+
     }
     try:
         response = requests.post(url, json=data)
@@ -280,14 +309,14 @@ def send_via_bot(text, to):
     except Exception as e:
         print(f"❌ Ошибка при отправке через бот: {e}")
 
-# async def get_latest_message():
-#     await client.start()
-#     # Получаем объект канала
-#     channel = await client.get_entity("DCATrack")
-#     # Получаем последнее сообщение
-#     messages = await client.get_messages(channel, limit=10)
-#     text = format(messages[0].text, "dca")
-#     send_via_bot(text)
+async def get_latest_message():
+    await client.start()
+    # Получаем объект канала
+    channel = await client.get_entity("DCATrack")
+    # Получаем последнее сообщение
+    messages = await client.get_messages(channel, limit=20)
+    text = await format(messages[1].text, "DCATrack")
+    send_via_bot(text, "DCATrack")
     
-# with client:
-#     client.loop.run_until_complete(get_latest_message())
+with client:
+    client.loop.run_until_complete(get_latest_message())
