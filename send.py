@@ -40,6 +40,8 @@ async def format(text, src):
         text = text.replace("New user prize", "Награда*")
         text = text.replace("~$ ", "")
         text = text.replace("Details", "Детали")
+
+        text = convert_utc_to_gmt3(text)
     if src == "kormushka_mexc":
         if "+" in text:
             text = "*Pump \n\n$" + text
@@ -71,7 +73,7 @@ async def format(text, src):
             text = text.replace("source // chat // trackers // support me", "")
             if("Long" in text):
                 text = text.replace("| Long", "")
-                text = "🟢Long" + text
+                text = "🟢Long " + text
             if("Short" in text):
                 text = text.replace("| Short", "")
                 text = "🔴Short " + text
